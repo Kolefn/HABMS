@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>>
+    <script src="Credentials.js"></script>
+    <script src="HttpClient.js"></script>
+    <script src="WeatherService.js"></script>
+    <script src="WindService.js"></script>
+    <script src="App.js"></script>
+
+<body onload="WindService.loadOptions()">
+
+<h2>HAB Mission Simulator</h2>
+
+<form>
+  Mission Date: 
+  <br>
+  <input type="datetime-local" id="mission_date" value="2019-04-06T12:01">
+  <br>
+  Latitude:
+  <br>
+  <input type="text" name="Latitude" id="launch_latitude" value="42.364170">
+  <br>
+  Longitude:
+  <br>
+  <input type="text" name="Longitude" id="launch_longitude" value="-71.054060">
+  <br>
+  Pressure Altitude: 
+  <br>
+  <select id="pressure_select"></select>
+  <br>
+  <br>
+</form>
+<button onclick="App.getMissionStats()">Calculate</button>
+</form>
+<div style="width: 400px; height: 150px; overflow: hidden">
+    <iframe id="wind_service_iframe" src="" height="1550"width="1500" scrolling="no" style="position: relative; top: -1300px">
+</div>
+</body>
+</html>
