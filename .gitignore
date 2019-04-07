@@ -1,3 +1,5 @@
+# OSX
+.DS_Store
 # Logs
 logs
 *.log
@@ -75,5 +77,11 @@ typings/
 # FuseBox cache
 .fusebox/
 
+# hide copy of the https://earth.nullschool.net 
+# code available https://github.com/cambecc/earth
+
+earth
+
+# credentials used for things like the weather api
 
 Credentials.js

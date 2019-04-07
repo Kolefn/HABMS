@@ -4,22 +4,63 @@ var WindService = {
      * @typedef {Object} WindVector
      * @property {number} direction the direction degree the wind is coming from 
      * @property {number} speed kilometers per hour
+     * 
      */
 
+     
 
     /**
-     * Get wind data for a position on earth at a specified 
-     * pressure altitude.
+     * Get the atmospheric level data required to run drift simulation.
+     * @see DriftSimulator for details on atmospheric level data structure 
      * @param {number} latitude 
      * @param {number} longitude
-     * @param {number} millibars of atmospheric pressure at the altitude
-     * @see `WindService.SUPPORTED_PRESSURES`
-     * @return {WindVector} 
+     * @return {Promise<Array<AtmosphericLevel>>}
      */
-    getWindAtLocation: (latitude, longitude, millibars) => {
-        const url = WindService.constructRequestURL(latitude, longitude, millibars);
-        return WindService.loadIFrame(url)
-            .then(WindService.extractDataFromHTML);
+    getAtmosphericLevelsData: (latitude, longitude) => {
+        return WindService.getAllWindVectorsAbovePoint(latitude, longitude)
+            .then((vectors)=> {
+                const keys = Object.keys(WindService.SUPPORTED_PRESSURES);
+                const levels = vectors.map((vector, i)=>{
+                    const key = keys[i];
+                    const altitude =  WindService.PRESSURE_ALTITUDES_METERS[key];
+                    const pressure = WindService.SUPPORTED_PRESSURES[key];
+                    return  {vector, altitude, pressure};
+                });
+                return Promise.resolve(levels);
+            });
+    },
+
+     /**
+     * Get all available wind data for atmospheric levels above a location.
+     * @param {number} latitude 
+     * @param {number} longitude
+     * @return {Array<WindVector>}
+     */
+    getAllWindVectorsAbovePoint: (latitude, longitude)=> {
+        return new Promise((resolve, reject) => {
+            const urls = Object.keys(WindService.SUPPORTED_PRESSURES)
+                        .map((key)=> WindService.constructRequestURL(latitude, longitude, WindService.SUPPORTED_PRESSURES[key]) );
+    
+            WindService.loadIFrame(urls[0]).then(()=> {
+                let vectors = [];
+                const iframe = document.getElementById("wind_service_iframe");
+                const iframeDocument = iframe.contentWindow.document;
+                const element = iframeDocument.getElementById("location-wind");
+                //wait for data to load in
+                let isBlank = false;
+                element.addEventListener('DOMSubtreeModified', function handler(){
+                    if(isBlank){ isBlank = false; return; }else { isBlank = true; }
+                    vectors.push(WindService.extractWindVectorFromElement(element));
+                    if(vectors.length === urls.length){
+                        element.removeEventListener('DOMSubtreeModified', handler);
+                        resolve(vectors);
+                    }else{
+                        iframe.src = urls[vectors.length];
+                    }
+                });
+            });
+        });
+        
     },
 
     /**
@@ -35,7 +76,8 @@ var WindService = {
             let resolved = false;
             let iframe = document.getElementById("wind_service_iframe");
             iframe.src = url;
-            iframe.addEventListener('load', (evt) => {
+            iframe.addEventListener('load', function handler(evt){
+                iframe.removeEventListener('load', handler);
                 resolve(evt.target);
                 resolved = true;
             });
@@ -46,12 +88,24 @@ var WindService = {
                 }
             }, timeout * 1000);
         });
-        
     },
 
-    extractDataFromHTML: (html) => {
-        // let content = document.getElementById("wind_service_iframe").contentWindow.body;
-        // console.log(content);
+    /**
+     * inner text of the location-wind element looks something like 240° @ 14
+     * and needs to be converted to { direction: 240, speed: 14 }
+     * @param {*} element
+     * @return {WindVector} 
+     */
+    extractWindVectorFromElement: (element) => {
+        const dataString = element.innerText;
+        const dataChunks = dataString
+                    .replace(/[^\w\s]/gi, '')
+                    .split("  ")
+                    .map((val)=> Number.parseFloat(val));
+        const headingDegrees = dataChunks[0];
+        const speed = dataChunks[1];
+        const windVector = { direction: headingDegrees, speed };
+        return windVector;
     },
 
     /**
@@ -61,42 +115,8 @@ var WindService = {
     * @param {number} millibars of atmospheric pressure at the altitude
     */
     constructRequestURL: (latitude, longitude, millibars) => {
-        return `https://earth.nullschool.net/#current/wind/isobaric/${millibars}hPa/loc=${longitude},${latitude}`;
+        return `./earth/#current/wind/isobaric/${millibars}hPa/loc=${longitude},${latitude}`;
     },
-
-    /**
-     * Conversts millibars (hPa) to pressure altitude in feet. Note
-     * this is not 100% accurate but approximate within ~100ft. 
-     * @param {number} millibars of atmospheric pressure
-     * @return {number} the approx. altitude in feet
-     */
-    convertMillibarsToAltitudeFt: (millibars) => {
-        const MULT = 145366.45;
-        const STANDARD_ATM_PRESS = 1013.25;
-        const EXP = 0.190284;
-
-        return MULT * ( 1 - Math.pow(millibars / STANDARD_ATM_PRESS, EXP)); 
-    },
-
-    loadOptions: ()=> {
-        let selectionList = document.getElementById("pressure_select");
-        for(let key in WindService.SUPPORTED_PRESSURES){
-            let option = document.createElement("option");
-            option.text = key;
-            option.value = WindService.SUPPORTED_PRESSURES[key];
-            selectionList.add(option);
-        }
-    },
-
-    handleFormSubmit: () => {
-        const lat = document.getElementById("launch_latitude").value;
-        const lon = document.getElementById("launch_longitude").value;
-        const pressure = document.getElementById("pressure_select").value;
-        
-
-        WindService.getWindAtLocation(lat, lon, pressure);
-    },
-
 
     SUPPORTED_PRESSURES: {
         hPa1000: 1000,
@@ -107,4 +127,14 @@ var WindService = {
         hPa70: 70,
         hPa10: 10, 
     },
+
+    PRESSURE_ALTITUDES_METERS: {
+        hPa1000: 110.8,
+        hPa800: 1948.2,
+        hPa700: 3010.9,
+        hPa500: 5572.1,
+        hPa250: 10358.5,
+        hPa70: 17661.7,
+        hPa10: 25907.5,
+    }
 }

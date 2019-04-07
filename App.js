@@ -1,62 +1,65 @@
 var App = {
+
+
     getMissionStats: ()=> {
-        // WeatherService.handleFormSubmit(); 
-        // WindService.handleFormSubmit();
-        DriftSimulator.simulate({
-            maxAltitude: 30,
-            launchPoint: { latitude: 42.364170, longitude: -71.054060, altitude: 43 },
-            atmosphericLevels: [
-                {
-                    vector: {
-                        direction: 305,
-                        speed: 29
-                    },
-                    altitude: 110.8
-                },
-                {
-                    vector: {
-                        direction: 320,
-                        speed: 37
-                    },
-                    altitude: 1948.2
-                },
-                {
-                    vector: {
-                        direction: 300,
-                        speed: 61
-                    },
-                    altitude: 3010.9
-                },
-                {
-                    vector: {
-                        direction: 285,
-                        speed: 86
-                    },
-                    altitude: 5572.1
-                },
-                {
-                    vector: {
-                        direction: 290,
-                        speed: 131
-                    },
-                    altitude: 10358.5
-                },
-                {
-                    vector: {
-                        direction: 285,
-                        speed: 68
-                    },
-                    altitude: 17661.7
-                },
-                {
-                    vector: {
-                        direction: 90,
-                        speed: 43
-                    },
-                    altitude: 25907.5
-                },
-            ]
-        }) 
+        const launchDate = App.getLaunchDate();
+        const launchPoint = App.getLaunchPoint();
+        const { latitude, longitude } = launchPoint;
+
+        WeatherService.getForecastData(launchDate, latitude, longitude).then(App.displayWeatherData);
     },
+
+    runDriftSimulation: () => {
+        
+        const launchPoint = App.getLaunchPoint();
+        const { latitude, longitude } = launchPoint;
+        MapService.initMap(latitude, longitude);
+
+        const runButton = document.getElementById("simulate_drift_button");
+        runButton.innerText = "Loading...";
+        runButton.disabled = true;
+        WindService.getAtmosphericLevelsData(latitude, longitude).then((levels)=> {
+            runButton.innerText = "Simulating...";
+            const path = DriftSimulator.simulate({
+                launchPoint: {
+                    ...launchPoint,
+                    altitude: 43,
+                },
+                maxAltitude: 30,
+                atmosphericLevels: levels
+            });
+            runButton.innerText = "Done.";
+            MapService.addMarkers(path);
+        });
+    },
+
+    displayWeatherData: (payload) => {
+        const element = document.getElementById("weather_details");
+        let html = "";
+        const hourlyData = payload.hourly.data.forEach((val)=> {
+            html += `<p> ${new Date(val.time * 1000).getHours()}:00`;
+            html += ` | ${val.summary} | ${val.temperature} &deg;F`;
+            html += ` | ${val.windBearing}&deg;, ${val.windSpeed} mi/h`; 
+            html += ` | ${val.pressure} hPa </p>`;
+        });
+
+        element.innerHTML = html;
+    },
+
+    getLaunchPoint: () => {
+        const lat = document.getElementById("launch_latitude").value;
+        const lon = document.getElementById("launch_longitude").value;
+        return { 
+            latitude: Number.parseFloat(lat),
+            longitude: Number.parseFloat(lon) 
+        };
+    },
+
+    getLaunchDate: () => {
+        const launchDateString = document.getElementById("launch_date").value;
+        const date = new Date(launchDateString);
+        date.setHours(24);
+        return date;
+    }
 }
 

@@ -1,38 +1,63 @@
 <!DOCTYPE html>
-<html>>
+<html>
+  
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous"></script>  
+      <script async defer
+    src="https://maps.googleapis.com/maps/api/js">
+    </script>  
     <script src="Credentials.js"></script>
     <script src="WeatherService.js"></script>
     <script src="WindService.js"></script>
     <script src="DriftSimulator.js"></script>
+    <script src="MapService.js"></script>
     <script src="App.js"></script>
- 
-<body onload="WindService.loadOptions()">
+    
+</html>
+<head>
+    <style>
+       #map {
+         height: 400px;  
+         width: 400px; 
+        }
+        #simulation_disclaimer {
+          font-size: 0.7em
+        }
+     </style>
+</head>
+<body>
 
 <h2>HAB Mission Simulator</h2>
 
 <form>
-  Mission Date: 
+  Launch Date: 
   <br>
-  <input type="datetime-local" id="mission_date" value="2019-04-06T12:01">
+  <input type="date" id="launch_date">
   <br>
-  Latitude:
+  Launch Latitude:
   <br>
   <input type="text" name="Latitude" id="launch_latitude" value="42.364170">
   <br>
-  Longitude:
+  Launch Longitude:
   <br>
   <input type="text" name="Longitude" id="launch_longitude" value="-71.054060">
   <br>
-  Pressure Altitude: 
-  <br>
-  <select id="pressure_select"></select>
-  <br>
   <br>
 </form>
-<button onclick="App.getMissionStats()">Calculate</button>
-</form>
-<div style="width: 400px; height: 150px; overflow: hidden">
-    <iframe id="wind_service_iframe" src="" height="1550"width="1500" scrolling="no" style="position: relative; top: -1300px">
+<button onclick="App.getMissionStats()">Get Launch Day Weather</button>
+<div id="weather_details" style="overflow-y: scroll; max-height: 150px;"></div>
+<br>
+<br>
+<button id="simulate_drift_button" onclick="App.runDriftSimulation()">Simulate Drift</button>
+<p id="simulation_disclaimer">Simulation uses current (from today) atmospheric weather data. Results are approximate.</p>
+<div id="map"></div>
+
+<div style="width: 0px; height: 0px; overflow: hidden">
+    <iframe id="wind_service_iframe" src="" height="1550"width="1500" scrolling="no" style="position: relative;">
 </div>
+<br>
+<br>
 </body>
 </html>

@@ -13,7 +13,6 @@ var WeatherService = {
         return fetch(url).then(function(response) {
             return response.json();
         }).then(function(data) {
-            console.log(data);
             return Promise.resolve(data);
         }).catch(function(error) {
             console.log(error);
@@ -40,13 +39,5 @@ var WeatherService = {
     getFormattedTimeString(date){
         return date.valueOf() / 1000;
 
-    },
-
-    handleFormSubmit: () => {
-        const missionDateString = document.getElementById("mission_date").value;
-        const launchLat = document.getElementById("launch_latitude").value;
-        const launchLon = document.getElementById("launch_longitude").value;
-
-        WeatherService.getForecastData(new Date(missionDateString), launchLat, launchLon);
     }
  };

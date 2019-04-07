@@ -15,6 +15,7 @@ var DriftSimulator = {
       * @property {number=} pressure in hPa/millibars
       */
 
+
     /**
      * Estimates the drift pattern of the ballon as it ascends. 
      * @param {Object} config for configuring the simulation
@@ -24,24 +25,53 @@ var DriftSimulator = {
      * @param {number} config.weight the total weight of the payload and the balloon
      * @return {Array<Coords>} an array of coordinates describing the estimated path of the balloon
      */
-    simulate: (config)=> {
-        const { launchPoint, atmosphericLevels, maxAltitude, weight } = config;
+    simulate: (config) => {
+       const { atmosphericLevels, launchPoint, maxAltitude } = config;
+       //assumes wind direction is the same all the way to max altitude beyond last provided level
+       atmosphericLevels.push({
+            ...atmosphericLevels[atmosphericLevels.length - 1],
+            altitude: maxAltitude * 1000
+       });
+       const ascendPath = DriftSimulator.simulatePhase({
+           ...config, 
+           startPoint: 
+           launchPoint, 
+           averageSpeed: 0.25,  
+        }).map((val)=> Object.assign(val, { color: "red"}) );
+
+       const ascendEndPoint = ascendPath[ascendPath.length - 1];
+
+       const descendPath = DriftSimulator.simulatePhase({
+           ...config, 
+           atmosphericLevels: atmosphericLevels.reverse(), 
+           startPoint: ascendEndPoint, 
+           averageSpeed: 0.66, 
+        }).map((val)=> Object.assign(val, { color: "blue"}) );
+
+       return ascendPath.concat(descendPath);
+    },
+
+    /**
+     * Estimates the drift pattern of the ballon as it ascends. 
+     * @param {Object} config for configuring the simulation
+     * @param {Coords} config.startPoint the starting lat, lon, and altitude of the ballon.
+     * @param {Array<AtmosphericLevel>} config.atmosphericLevels the wind data used to calculate drift
+     * @param {number} config.maxAltitude the max altitude in km that your balloon is rated for
+     * @param {number} config.averageSpeed the average speed of the balloon in km / h
+     * @return {Array<Coords>} an array of coordinates describing the estimated path of the balloon
+     */
+    simulatePhase: (config)=> {
+        const { startPoint, atmosphericLevels, maxAltitude, averageSpeed } = config;
         const METERS_PER_KM = 1000;
-        const AVG_SPEED_KM_PER_MIN = 0.25;
-        const AVG_SPEED_M_PER_MIN = AVG_SPEED_KM_PER_MIN * METERS_PER_KM;
+        const AVG_SPEED_M_PER_MIN = averageSpeed * METERS_PER_KM;
         const EST_FLIGHT_TIME = (maxAltitude*METERS_PER_KM) / AVG_SPEED_M_PER_MIN;
 
-        //assumes wind direction is the same all the way to max altitude beyond last provided level
-        atmosphericLevels.push({
-            vector: atmosphericLevels[atmosphericLevels.length-1],
-            altitude: maxAltitude * METERS_PER_KM
-        });
+        let coords = [startPoint];
 
-        let coords = [launchPoint];
-        for(let i = 0; i < atmosphericLevels.length - 1; i++){
+        for(let i = 0; i < atmosphericLevels.length-1; i++){
             const level = atmosphericLevels[i];
             const nextLevel = atmosphericLevels[i+1];
-            const altDiff = nextLevel.altitude - level.altitude;
+            const altDiff = Math.abs(nextLevel.altitude - level.altitude);
             const timeBetweenLevels = altDiff / AVG_SPEED_M_PER_MIN;
             const drift = level.vector.speed * (timeBetweenLevels / 60);
             const headingVector = DriftSimulator.convertDegreesToNormalVector(level.vector.direction);
@@ -50,7 +80,6 @@ var DriftSimulator = {
             newPoint.altitude = nextLevel.altitude;
             coords.push(newPoint);
         }
-        console.log(coords);
 
         return coords;
     },
