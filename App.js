@@ -16,7 +16,8 @@ var App = {
         MapService.initMap(latitude, longitude);
 
         const runButton = document.getElementById("simulate_drift_button");
-        runButton.innerText = "Loading...";
+        const runButtonText = document.getElementById("simulate_drift_button_text");
+        runButtonText.innerHTML = "Loading...";
         runButton.disabled = true;
         WindService.getAtmosphericLevelsData(latitude, longitude).then((levels)=> {
             runButton.innerText = "Simulating...";
@@ -28,7 +29,7 @@ var App = {
                 maxAltitude: 30,
                 atmosphericLevels: levels
             });
-            runButton.innerText = "Done.";
+            runButtonText.innerHTML = "Done.";
             MapService.addMarkers(path);
         });
     },
@@ -36,7 +37,7 @@ var App = {
     displayWeatherData: (payload) => {
         const element = document.getElementById("weather_details");
         let html = "";
-        const hourlyData = payload.hourly.data.forEach((val)=> {
+        payload.hourly.data.forEach((val)=> {
             html += `<p> ${new Date(val.time * 1000).getHours()}:00`;
             html += ` | ${val.summary} | ${val.temperature} &deg;F`;
             html += ` | ${val.windBearing}&deg;, ${val.windSpeed} mi/h`; 

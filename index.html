@@ -1,26 +1,183 @@
 <!DOCTYPE html>
 <html>
-  
-    <script
-      src="https://code.jquery.com/jquery-3.3.1.min.js"
-      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-      crossorigin="anonymous"></script>  
-      <script async defer
-    src="https://maps.googleapis.com/maps/api/js">
-    </script>  
-    <script src="Credentials.js"></script>
-    <script src="WeatherService.js"></script>
-    <script src="WindService.js"></script>
-    <script src="DriftSimulator.js"></script>
-    <script src="MapService.js"></script>
-    <script src="App.js"></script>
-    
-</html>
+        <script
+        src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>  
+        <script async defer
+      src="https://maps.googleapis.com/maps/api/js">
+      </script>  
+      <script src="Credentials.js"></script>
+      <script src="WeatherService.js"></script>
+      <script src="WindService.js"></script>
+      <script src="DriftSimulator.js"></script>
+      <script src="MapService.js"></script>
+      <script src="App.js"></script>
+      
 <head>
     <style>
+       @import url('https://fonts.googleapis.com/css?family=Heebo');
+       html, body {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           font-family: 'Heebo', sans-serif;
+           background-color: #212121;
+           width: 100%;
+           height: 100%;
+       }
+       .body-header {
+           display: flex;
+           flex-direction: column;
+           width: 100%;
+           padding: 10px;
+           justify-content: center;
+           align-items: center;
+       }
+       .body-header-titles {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+       }
+       .title {
+           font-size: 2.2em;
+           line-height: 0px;
+           color: #FAFAFA;
+           font-weight: bold;
+       }
+       .sub-title {
+           font-size: 1em;
+           line-height: 0px;
+           color: #FAFAFA;
+           font-weight: bold;
+           opacity: 0.84;
+       }
+       .input-board {
+           position: relative;
+           display: flex;
+           flex-direction: row;
+           min-width: 50%;
+           padding: 10px;
+           justify-content: space-around;
+           align-items: center;
+           background-color: #42424240;
+           border-radius: 2px;
+           overflow: visible;
+       }
+       .input-container {
+         padding: 2px;
+       }
+       .input-label {
+           font-size: 0.8em;
+           line-height: 2px;
+           color: #FAFAFA;
+           opacity: 0.54;
+       }
+       .input {
+            font-family: 'Heebo', sans-serif;
+            border: 1px solid #ccc;
+            height: 25px;
+            user-select: none;
+            border-radius: 2px;
+            font-size: 1em;            
+            background-color: #E0E0E0;
+
+       }
+       .input:focus{
+            outline: 2px solid #26A69A;
+        }
+        .weather-button {
+            position: absolute;
+            top: -20px;
+            right: -50px;
+            width: 120px;
+            padding: 5px;
+            border-radius: 2px;
+            border-width: 0px;
+            background-color: #26A69A80;
+            transition: all 0.3s;
+        }
+        .weather-button:hover {
+            cursor: pointer;
+            transform: rotateZ(5deg);
+        }
+        .weather-button:focus {
+           outline-width: 0px;
+        }
+        .weather-button-text {
+            font-size: 1.2em;
+            line-height: 0px;
+            color: #E0E0E0;
+        }
+        .weather-details { 
+            position: absolute;
+            top: 30%;
+            right: 0;
+            height: 50%;
+            width: 23%;
+            overflow-y: scroll;
+            overflow-x: scroll;
+
+        }
+        .weather-details p {
+            font-size: 0.8em;
+            color: #E0E0E0;
+        }
+       .center-console {
+            position: relative;
+            width: 52vw;
+            height: 68vh;
+            background-color: #E0E0E0;
+            border-radius: 2px;
+            overflow: hidden;
+       }
+       .console-underlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+       }
+       .simulate-description {
+           margin: auto;
+           margin-top: 22%;
+           font-size: 1.4em;
+           color: #212121;
+           font-weight: bold;
+           text-align: center;
+       }
+       .simulate-disclaimer {
+           margin: auto;
+           font-size: 0.6em;
+           color: #212121;
+           opacity: 0.72;
+           text-align: center;
+       }
+       .simulate-button-bar {
+            position: absolute;
+            bottom: -1px;
+            left: -1px;
+            width: 101%;
+            height: 13%;
+            background-color: #26A69A;
+       }
+       .simulate-button-bar:hover {
+           cursor: pointer;
+       }
+       .simulate-button-bar:focus {
+           outline-width: 0px;
+       }
+       .simulate-button-text {
+           font-size: 1.2em;
+           line-height: 0px;
+           color: #FAFAFA;
+           font-weight: bold;
+       }
        #map {
-         height: 400px;  
-         width: 400px; 
+         height: 100%;
+         width: 100%;
+         border-radius: 2px;
         }
         #simulation_disclaimer {
           font-size: 0.7em
@@ -28,36 +185,44 @@
      </style>
 </head>
 <body>
+    <div class="body-header">
+        <div class="body-header-titles">
+                <h2 class="title">H.A.B.M.S</h2>
+                <h4 class="sub-title">High Altitude Balloon Mission Simulator</h3>
+        </div> 
+        <div class="input-board">
+                <div class="input-container">
+                        <p class="input-label">Latitude</p>
+                        <input id="launch_latitude"class="input" type="number" value="42.364170">
+                </div>
 
-<h2>HAB Mission Simulator</h2>
+                <div class="input-container">
+                        <p class="input-label">Longitude</p>
+                        <input id="launch_longitude" class="input" type="number" value="-71.054060">
+                </div>
 
-<form>
-  Launch Date: 
-  <br>
-  <input type="date" id="launch_date">
-  <br>
-  Launch Latitude:
-  <br>
-  <input type="text" name="Latitude" id="launch_latitude" value="42.364170">
-  <br>
-  Launch Longitude:
-  <br>
-  <input type="text" name="Longitude" id="launch_longitude" value="-71.054060">
-  <br>
-  <br>
-</form>
-<button onclick="App.getMissionStats()">Get Launch Day Weather</button>
-<div id="weather_details" style="overflow-y: scroll; max-height: 150px;"></div>
-<br>
-<br>
-<button id="simulate_drift_button" onclick="App.runDriftSimulation()">Simulate Drift</button>
-<p id="simulation_disclaimer">Simulation uses current (from today) atmospheric weather data. Results are approximate.</p>
-<div id="map"></div>
+                <div class="input-container">
+                        <p class="input-label">Date</p>
+                        <input id="launch_date" class="input" type="date">
+                </div>
+                <button class="weather-button" onclick="App.getMissionStats()"><p class="weather-button-text">Load Weather</p></button>
+        </div>
+        <div id="weather_details" class="weather-details"></div>
 
-<div style="width: 0px; height: 0px; overflow: hidden">
-    <iframe id="wind_service_iframe" src="" height="1550"width="1500" scrolling="no" style="position: relative;">
-</div>
-<br>
-<br>
+    </div>
+    
+    <div class="center-console">
+        <div class="console-underlay">
+                <p class="simulate-description">Press simulate to find out how wind might <br> push your ballon if you launched today.</p>
+                <p class="simulate-disclaimer">Simulation uses current (from today) atmospheric weather data. Results are approximate.</p>
+        </div>
+        <div id="map"></div>
+        <button class="simulate-button-bar" id="simulate_drift_button" onclick="App.runDriftSimulation()">
+            <p id="simulate_drift_button_text" class="simulate-button-text">SIMULATE</p>
+        </button>
+    </div>
+    <div style="width: 0px; height: 0px; overflow: hidden">
+            <iframe id="wind_service_iframe" src="" height="1550"width="1500" scrolling="no" style="position: relative;">
+        </div>
 </body>
 </html>
